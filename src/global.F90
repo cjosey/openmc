@@ -56,6 +56,9 @@ module global
 
   ! Number of lost particles
   integer :: n_lost_particles
+  
+  ! Maximum levels of nested universes
+  integer :: MAX_COORD
 
   ! ============================================================================
   ! CROSS SECTION RELATED VARIABLES
