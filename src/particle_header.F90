@@ -42,7 +42,8 @@ module particle_header
 
     ! Particle coordinates
     integer :: n_coord                   ! number of current coordinates
-    type(LocalCoord) :: coord(MAX_COORD) ! coordinates for all levels
+    type(LocalCoord), allocatable :: coord(:) ! coordinates for all levels
+    logical :: is_allocated = .FALSE.    ! Whether or not the particle is allocated
 
     ! Other physical data
     real(8)    :: wgt           ! particle weight
@@ -94,7 +95,13 @@ contains
   subroutine initialize_particle(this)
 
     class(Particle) :: this
-
+    
+    ! If not allocated, allocate coordinate list
+    if(.not. this % is_allocated) then
+      allocate(this % coord(MAX_COORD))
+      this % is_allocated = .TRUE.
+    end if
+    
     ! Clear coordinate lists
     call this % clear()
 
@@ -114,7 +121,8 @@ contains
     this % wgt_bank      = ZERO
     this % n_collision   = 0
     this % fission       = .false.
-
+    
+    
     ! Set up base level coordinates
     this % coord(1) % universe = BASE_UNIVERSE
     this % n_coord = 1

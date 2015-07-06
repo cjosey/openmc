@@ -104,11 +104,10 @@ contains
     ! Check to make sure there are not too many nested coordinate levels in the
     ! geometry since the coordinate list is statically allocated for performance
     ! reasons
-    if (maximum_levels(universes(BASE_UNIVERSE)) > MAX_COORD) then
-      call fatal_error("Too many nested coordinate levels in the geometry. &
-           &Try increasing the maximum number of coordinate levels by &
-           &providing the CMake -Dmaxcoord= option.")
-    end if
+    
+    ! Set maximum nested coordinate levels.  Allows for single allocation
+    ! for performance reasons
+    MAX_COORD = maximum_levels(universes(BASE_UNIVERSE))
 
     if (run_mode /= MODE_PLOTTING) then
       ! With the AWRs from the xs_listings, change all material specifications
