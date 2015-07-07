@@ -100,10 +100,6 @@ contains
     ! After reading input and basic geometry setup is complete, build lists of
     ! neighboring cells for efficient tracking
     call neighbor_lists()
-
-    ! Check to make sure there are not too many nested coordinate levels in the
-    ! geometry since the coordinate list is statically allocated for performance
-    ! reasons
     
     ! Set maximum nested coordinate levels.  Allows for single allocation
     ! for performance reasons
