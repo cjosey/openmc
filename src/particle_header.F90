@@ -2,7 +2,6 @@ module particle_header
 
   use constants,       only: NEUTRON, ONE, NONE, ZERO
   use geometry_header, only: BASE_UNIVERSE
-  use global         , only: MAX_COORD
 
   implicit none
 
@@ -42,9 +41,9 @@ module particle_header
     integer    :: type          ! Particle type (n, p, e, etc)
 
     ! Particle coordinates
-    integer :: n_coord                   ! number of current coordinates
-    type(LocalCoord), allocatable :: coord(:) ! coordinates for all levels
-    logical :: is_allocated = .FALSE.    ! Whether or not the particle is allocated
+    integer                       :: n_coord                 ! number of current coordinates
+    type(LocalCoord), allocatable :: coord(:)                ! coordinates for all levels
+    logical                       :: is_allocated = .FALSE.  ! Whether or not the particle is allocated
 
     ! Other physical data
     real(8)    :: wgt           ! particle weight
@@ -122,8 +121,7 @@ contains
     this % wgt_bank      = ZERO
     this % n_collision   = 0
     this % fission       = .false.
-    
-    
+
     ! Set up base level coordinates
     this % coord(1) % universe = BASE_UNIVERSE
     this % n_coord = 1
