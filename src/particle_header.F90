@@ -2,6 +2,7 @@ module particle_header
 
   use constants,       only: NEUTRON, ONE, NONE, ZERO
   use geometry_header, only: BASE_UNIVERSE
+  use global,          only: MAX_COORD
 
   implicit none
 
