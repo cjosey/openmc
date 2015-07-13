@@ -152,8 +152,8 @@ contains
       ! Determine the energy grid index using a logarithmic mapping to reduce
       ! the energy range over which a binary search needs to be performed
 
-      below_grid = (E < nuc % energy(1))
-      above_grid = (E > nuc % energy(nuc % n_grid))
+      below_grid = (E < nuc % egrid_min)
+      above_grid = (E > nuc % egrid_max)
       
       if(.not. (below_grid .or. above_grid) ) then
         ! Determine bounding indices based on which equal log-spaced interval

@@ -467,6 +467,9 @@ contains
 
       XSS_index = 1
       nuc % energy = get_real(NE)
+      
+      nuc % egrid_min = nuc % energy(1)
+      nuc % egrid_max = nuc % energy(NE)
 
       ! Skip total and absorption
       XSS_index = XSS_index + 2*NE
