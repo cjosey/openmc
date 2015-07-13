@@ -162,8 +162,7 @@ contains
         i_high = nuc % grid_index(u + 1) + 1
 
         ! Perform binary search over reduced range
-        i_grid = binary_search(nuc % energy(i_low:i_high), &
-             i_high - i_low + 1, E) + i_low - 1
+        i_grid = binary_search(nuc % energy, i_low, i_high, E)
       
       elseif (below_grid) then
         i_grid = 1
