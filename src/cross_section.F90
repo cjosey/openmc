@@ -131,6 +131,8 @@ contains
     integer :: i_grid ! index on nuclide energy grid
     integer :: i_low  ! lower logarithmic mapping index
     integer :: i_high ! upper logarithmic mapping index
+    logical :: below_grid ! Is the energy below grid?
+    logical :: above_grid ! Is the energy above grid?
     real(8), intent(in) :: E ! energy
     real(8) :: f             ! interp factor on nuclide energy grid
     type(Nuclide),  pointer :: nuc
@@ -150,11 +152,10 @@ contains
       ! Determine the energy grid index using a logarithmic mapping to reduce
       ! the energy range over which a binary search needs to be performed
 
-      if (E < nuc % energy(1)) then
-        i_grid = 1
-      elseif (E > nuc % energy(nuc % n_grid)) then
-        i_grid = nuc % n_grid - 1
-      else
+      below_grid = (E < nuc % energy(1))
+      above_grid = (E > nuc % energy(nuc % n_grid))
+      
+      if(.not. (below_grid .or. above_grid) ) then
         ! Determine bounding indices based on which equal log-spaced interval
         ! the energy is in
         i_low  = nuc % grid_index(u)
@@ -163,6 +164,11 @@ contains
         ! Perform binary search over reduced range
         i_grid = binary_search(nuc % energy(i_low:i_high), &
              i_high - i_low + 1, E) + i_low - 1
+      
+      elseif (below_grid) then
+        i_grid = 1
+      elseif (above_grid) then
+        i_grid = nuc % n_grid - 1
       end if
 
     case (GRID_NUCLIDE)
