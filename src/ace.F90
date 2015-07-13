@@ -1,7 +1,8 @@
 module ace
 
   use ace_header,       only: Nuclide, Reaction, SAlphaBeta, XsListing, &
-                              DistEnergy
+                              DistEnergy, XS_TOTAL, XS_ELASTIC, XS_ABSORPTION, &
+                              XS_FISSION, XS_NUFISSION, XS_KAPPAFISSION
   use constants
   use endf,             only: reaction_name, is_fission, is_disappearance
   use error,            only: fatal_error, warning
@@ -455,18 +456,10 @@ contains
     else ! read in non-0K data
       nuc % n_grid = NE
       allocate(nuc % energy(NE))
-      allocate(nuc % total(NE))
-      allocate(nuc % elastic(NE))
-      allocate(nuc % fission(NE))
-      allocate(nuc % nu_fission(NE))
-      allocate(nuc % absorption(NE))
+      allocate(nuc % xs(6,NE))
 
       ! initialize cross sections
-      nuc % total      = ZERO
-      nuc % elastic    = ZERO
-      nuc % fission    = ZERO
-      nuc % nu_fission = ZERO
-      nuc % absorption = ZERO
+      nuc % xs = ZERO
 
       ! Read data from XSS -- only the energy grid, elastic scattering and heating
       ! cross section values are actually read from here. The total and absorption
@@ -479,7 +472,7 @@ contains
       XSS_index = XSS_index + 2*NE
 
       ! Continue reading elastic scattering and heating
-      nuc % elastic = get_real(NE)
+      nuc % xs(XS_ELASTIC,:) = get_real(NE)
 
     end if
 
@@ -725,7 +718,7 @@ contains
     rxn % has_energy_dist = .false.
 
     ! Add contribution of elastic scattering to total cross section
-    nuc % total = nuc % total + nuc % elastic
+    nuc % xs(XS_TOTAL,:) = nuc % xs(XS_TOTAL,:) + nuc % xs(XS_ELASTIC,:)
 
     ! By default, set nuclide to not fissionable and then change if fission
     ! reactions are encountered
@@ -820,11 +813,11 @@ contains
       if (rxn % MT >= N_2N0 .and. rxn % MT <= N_2NC .and. MTs % contains(N_2N)) cycle
 
       ! Add contribution to total cross section
-      nuc % total(IE:IE+NE-1) = nuc % total(IE:IE+NE-1) + rxn % sigma
+      nuc % xs(XS_TOTAL,IE:IE+NE-1) = nuc % xs(XS_TOTAL,IE:IE+NE-1) + rxn % sigma
 
       ! Add contribution to absorption cross section
       if (is_disappearance(rxn % MT)) then
-        nuc % absorption(IE:IE+NE-1) = nuc % absorption(IE:IE+NE-1) + rxn % sigma
+        nuc % xs(XS_ABSORPTION,IE:IE+NE-1) = nuc % xs(XS_ABSORPTION,IE:IE+NE-1) + rxn % sigma
       end if
 
       ! Information about fission reactions
@@ -838,10 +831,10 @@ contains
       ! Add contribution to fission cross section
       if (is_fission(rxn % MT)) then
         nuc % fissionable = .true.
-        nuc % fission(IE:IE+NE-1) = nuc % fission(IE:IE+NE-1) + rxn % sigma
+        nuc % xs(XS_FISSION,IE:IE+NE-1) = nuc % xs(XS_FISSION,IE:IE+NE-1) + rxn % sigma
 
         ! Also need to add fission cross sections to absorption
-        nuc % absorption(IE:IE+NE-1) = nuc % absorption(IE:IE+NE-1) + rxn % sigma
+        nuc % xs(XS_ABSORPTION,IE:IE+NE-1) = nuc % xs(XS_ABSORPTION,IE:IE+NE-1) + rxn % sigma
 
         ! If total fission reaction is present, there's no need to store the
         ! reaction cross-section since it was copied to nuc % fission
@@ -1380,8 +1373,11 @@ contains
       nu = nu_total(nuc, E)
 
       ! determine nu-fission microscopic cross section
-      nuc % nu_fission(i) = nu * nuc % fission(i)
+      nuc % xs(XS_NUFISSION,i) = nu * nuc % xs(XS_FISSION,i)
     end do
+    
+    nuc % xs(XS_KAPPAFISSION,:) = nuc % reactions(nuc % index_fission(1)) % Q_value * &
+         nuc % xs(XS_FISSION,:)
 
   end subroutine generate_nu_fission
 

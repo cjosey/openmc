@@ -1,5 +1,6 @@
 module tracking
 
+  use ace_header,      only: XS_TOTAL, XS_NUFISSION
   use constants,       only: MODE_EIGENVALUE
   use cross_section,   only: calculate_xs
   use error,           only: fatal_error, warning
@@ -92,10 +93,10 @@ contains
            lattice_translation, next_level)
 
       ! Sample a distance to collision
-      if (material_xs % total == ZERO) then
+      if (material_xs % xs(XS_TOTAL) == ZERO) then
         d_collision = INFINITY
       else
-        d_collision = -log(prn()) / material_xs % total
+        d_collision = -log(prn()) / material_xs % xs(XS_TOTAL)
       end if
 
       ! Select smaller of the two distances
@@ -113,7 +114,7 @@ contains
       ! Score track-length estimate of k-eff
       if (run_mode == MODE_EIGENVALUE) then
         global_tally_tracklength = global_tally_tracklength + p % wgt * &
-             distance * material_xs % nu_fission
+             distance * material_xs % xs(XS_NUFISSION)
       end if
 
       if (d_collision > d_boundary) then
@@ -141,7 +142,7 @@ contains
         ! Score collision estimate of keff
         if (run_mode == MODE_EIGENVALUE) then
           global_tally_collision = global_tally_collision + p % wgt * &
-               material_xs % nu_fission / material_xs % total
+               material_xs % xs(XS_NUFISSION) / material_xs % xs(XS_TOTAL)
         end if
 
         ! score surface current tallies -- this has to be done before the collision

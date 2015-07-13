@@ -1,6 +1,7 @@
 module cross_section
 
-  use ace_header,      only: Nuclide, SAlphaBeta, Reaction, UrrData
+  use ace_header,      only: Nuclide, SAlphaBeta, Reaction, UrrData, XS_TOTAL, &
+                             XS_ABSORPTION, XS_ELASTIC, XS_FISSION, XS_NUFISSION
   use constants
   use energy_grid,     only: grid_method, log_spacing
   use error,           only: fatal_error
@@ -38,12 +39,7 @@ contains
     type(Material), pointer :: mat ! current material
 
     ! Set all material macroscopic cross sections to zero
-    material_xs % total          = ZERO
-    material_xs % elastic        = ZERO
-    material_xs % absorption     = ZERO
-    material_xs % fission        = ZERO
-    material_xs % nu_fission     = ZERO
-    material_xs % kappa_fission  = ZERO
+    material_xs % xs          = ZERO
 
     ! Exit subroutine if material is void
     if (p % material == MATERIAL_VOID) return
@@ -106,28 +102,8 @@ contains
       atom_density = mat % atom_density(i)
 
       ! Add contributions to material macroscopic total cross section
-      material_xs % total = material_xs % total + &
-           atom_density * micro_xs(i_nuclide) % total
-
-      ! Add contributions to material macroscopic scattering cross section
-      material_xs % elastic = material_xs % elastic + &
-           atom_density * micro_xs(i_nuclide) % elastic
-
-      ! Add contributions to material macroscopic absorption cross section
-      material_xs % absorption = material_xs % absorption + &
-           atom_density * micro_xs(i_nuclide) % absorption
-
-      ! Add contributions to material macroscopic fission cross section
-      material_xs % fission = material_xs % fission + &
-           atom_density * micro_xs(i_nuclide) % fission
-
-      ! Add contributions to material macroscopic nu-fission cross section
-      material_xs % nu_fission = material_xs % nu_fission + &
-           atom_density * micro_xs(i_nuclide) % nu_fission
-
-      ! Add contributions to material macroscopic energy release from fission
-      material_xs % kappa_fission = material_xs % kappa_fission + &
-           atom_density * micro_xs(i_nuclide) % kappa_fission
+      material_xs % xs = material_xs % xs + &
+           atom_density * micro_xs(i_nuclide) % xs
     end do
 
   end subroutine calculate_xs
@@ -212,39 +188,34 @@ contains
     ! Initialize URR probability table treatment to false
     micro_xs(i_nuclide) % use_ptable  = .false.
 
-    ! Initialize nuclide cross-sections to zero
-    micro_xs(i_nuclide) % fission    = ZERO
-    micro_xs(i_nuclide) % nu_fission = ZERO
-    micro_xs(i_nuclide) % kappa_fission  = ZERO
-
     ! Calculate microscopic nuclide total cross section
-    micro_xs(i_nuclide) % total = (ONE - f) * nuc % total(i_grid) &
-         + f * nuc % total(i_grid+1)
+    micro_xs(i_nuclide) % xs = (ONE - f) * nuc % xs(:,i_grid) &
+         + f * nuc % xs(:,i_grid+1)
 
-    ! Calculate microscopic nuclide elastic cross section
-    micro_xs(i_nuclide) % elastic = (ONE - f) * nuc % elastic(i_grid) &
-         + f * nuc % elastic(i_grid+1)
-
-    ! Calculate microscopic nuclide absorption cross section
-    micro_xs(i_nuclide) % absorption = (ONE - f) * nuc % absorption( &
-         i_grid) + f * nuc % absorption(i_grid+1)
-
-    if (nuc % fissionable) then
-      ! Calculate microscopic nuclide total cross section
-      micro_xs(i_nuclide) % fission = (ONE - f) * nuc % fission(i_grid) &
-           + f * nuc % fission(i_grid+1)
-
-      ! Calculate microscopic nuclide nu-fission cross section
-      micro_xs(i_nuclide) % nu_fission = (ONE - f) * nuc % nu_fission( &
-           i_grid) + f * nuc % nu_fission(i_grid+1)
-
-      ! Calculate microscopic nuclide kappa-fission cross section
-      ! The ENDF standard (ENDF-102) states that MT 18 stores
-      ! the fission energy as the Q_value (fission(1))
-      micro_xs(i_nuclide) % kappa_fission = &
-           nuc % reactions(nuc % index_fission(1)) % Q_value * &
-           micro_xs(i_nuclide) % fission
-    end if
+!~     ! Calculate microscopic nuclide elastic cross section
+!~     micro_xs(i_nuclide) % elastic = (ONE - f) * nuc % elastic(i_grid) &
+!~          + f * nuc % elastic(i_grid+1)
+!~ 
+!~     ! Calculate microscopic nuclide absorption cross section
+!~     micro_xs(i_nuclide) % absorption = (ONE - f) * nuc % absorption( &
+!~          i_grid) + f * nuc % absorption(i_grid+1)
+!~ 
+!~     if (nuc % fissionable) then
+!~       ! Calculate microscopic nuclide total cross section
+!~       micro_xs(i_nuclide) % fission = (ONE - f) * nuc % fission(i_grid) &
+!~            + f * nuc % fission(i_grid+1)
+!~ 
+!~       ! Calculate microscopic nuclide nu-fission cross section
+!~       micro_xs(i_nuclide) % nu_fission = (ONE - f) * nuc % nu_fission( &
+!~            i_grid) + f * nuc % nu_fission(i_grid+1)
+!~ 
+!~       ! Calculate microscopic nuclide kappa-fission cross section
+!~       ! The ENDF standard (ENDF-102) states that MT 18 stores
+!~       ! the fission energy as the Q_value (fission(1))
+!~       micro_xs(i_nuclide) % kappa_fission = &
+!~            nuc % reactions(nuc % index_fission(1)) % Q_value * &
+!~            micro_xs(i_nuclide) % fission
+!~     end if
 
     ! If there is S(a,b) data for this nuclide, we need to do a few
     ! things. Since the total cross section was based on non-S(a,b) data, we
@@ -345,9 +316,9 @@ contains
     end if
 
     ! Correct total and elastic cross sections
-    micro_xs(i_nuclide) % total = micro_xs(i_nuclide) % total - &
-         micro_xs(i_nuclide) % elastic + inelastic + elastic
-    micro_xs(i_nuclide) % elastic = inelastic + elastic
+    micro_xs(i_nuclide) % xs(XS_TOTAL) = micro_xs(i_nuclide) % xs(XS_TOTAL) - &
+         micro_xs(i_nuclide) % xs(XS_ELASTIC) + inelastic + elastic
+    micro_xs(i_nuclide) % xs(XS_ELASTIC) = inelastic + elastic
 
     ! Store S(a,b) elastic cross section for sampling later
     micro_xs(i_nuclide) % elastic_sab = elastic
@@ -490,10 +461,10 @@ contains
 
     ! Multiply by smooth cross-section if needed
     if (urr % multiply_smooth) then
-      elastic = elastic * micro_xs(i_nuclide) % elastic
-      capture = capture * (micro_xs(i_nuclide) % absorption - &
-           micro_xs(i_nuclide) % fission)
-      fission = fission * micro_xs(i_nuclide) % fission
+      elastic = elastic * micro_xs(i_nuclide) % xs(XS_ELASTIC)
+      capture = capture * (micro_xs(i_nuclide) % xs(XS_ABSORPTION) - &
+           micro_xs(i_nuclide) % xs(XS_FISSION))
+      fission = fission * micro_xs(i_nuclide) % xs(XS_FISSION)
     end if
 
     ! Check for negative values
@@ -504,15 +475,15 @@ contains
     ! Set elastic, absorption, fission, and total cross sections. Note that the
     ! total cross section is calculated as sum of partials rather than using the
     ! table-provided value
-    micro_xs(i_nuclide) % elastic = elastic
-    micro_xs(i_nuclide) % absorption = capture + fission
-    micro_xs(i_nuclide) % fission = fission
-    micro_xs(i_nuclide) % total = elastic + inelastic + capture + fission
+    micro_xs(i_nuclide) % xs(XS_ELASTIC) = elastic
+    micro_xs(i_nuclide) % xs(XS_ABSORPTION) = capture + fission
+    micro_xs(i_nuclide) % xs(XS_FISSION) = fission
+    micro_xs(i_nuclide) % xs(XS_FISSION) = elastic + inelastic + capture + fission
 
     ! Determine nu-fission cross section
     if (nuc % fissionable) then
-      micro_xs(i_nuclide) % nu_fission = nu_total(nuc, E) * &
-           micro_xs(i_nuclide) % fission
+      micro_xs(i_nuclide) % xs(XS_NUFISSION) = nu_total(nuc, E) * &
+           micro_xs(i_nuclide) % xs(XS_FISSION)
     end if
 
   end subroutine calculate_urr_xs
