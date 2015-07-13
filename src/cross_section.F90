@@ -478,7 +478,7 @@ contains
     micro_xs(i_nuclide) % xs(XS_ELASTIC) = elastic
     micro_xs(i_nuclide) % xs(XS_ABSORPTION) = capture + fission
     micro_xs(i_nuclide) % xs(XS_FISSION) = fission
-    micro_xs(i_nuclide) % xs(XS_FISSION) = elastic + inelastic + capture + fission
+    micro_xs(i_nuclide) % xs(XS_TOTAL) = elastic + inelastic + capture + fission
 
     ! Determine nu-fission cross section
     if (nuc % fissionable) then
