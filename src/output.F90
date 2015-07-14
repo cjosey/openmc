@@ -258,7 +258,7 @@ contains
     type(Cell),       pointer :: c => null()
     type(Surface),    pointer :: s => null()
     type(Universe),   pointer :: u => null()
-    class(Lattice),   pointer :: l => null()
+    type(Lattice),    pointer :: l => null()
 
     ! display type of particle
     select case (p % type)
@@ -351,7 +351,7 @@ contains
     integer :: unit_      ! unit to write to
     character(MAX_LINE_LEN) :: string
     type(Universe), pointer :: u => null()
-    class(Lattice), pointer :: l => null()
+    type(Lattice), pointer  :: l => null()
     type(Material), pointer :: m => null()
 
     ! Set unit to stdout if not already set
@@ -970,7 +970,7 @@ contains
     type(Surface),     pointer :: s => null()
     type(Cell),        pointer :: c => null()
     type(Universe),    pointer :: u => null()
-    class(Lattice),    pointer :: l => null()
+    type(Lattice),    pointer :: l => null()
 
     ! print summary of surfaces
     call header("SURFACE SUMMARY", unit=UNIT_SUMMARY)
