@@ -45,9 +45,9 @@ module geometry_header
 
     contains
 
-    procedure :: are_valid_indices => valid_inds_rect
-    procedure :: get_indices => get_inds_rect
-    procedure :: get_local_xyz => get_local_rect
+   ! procedure :: are_valid_indices => valid_inds_rect
+   ! procedure :: get_indices => get_inds_rect
+   ! procedure :: get_local_xyz => get_local_rect
   end type Lattice
 
 !===============================================================================
@@ -107,7 +107,7 @@ contains
 !===============================================================================
 
   function valid_inds_rect(this, i_xyz) result(is_valid)
-    class(Lattice), intent(in) :: this
+    type(Lattice), intent(in) :: this
     integer,            intent(in) :: i_xyz(3)
     logical                        :: is_valid
 
@@ -126,7 +126,7 @@ contains
 !===============================================================================
 
   function get_inds_rect(this, global_xyz) result(i_xyz)
-    class(Lattice), intent(in) :: this
+    type(Lattice), intent(in) :: this
     real(8),            intent(in) :: global_xyz(3)
     integer                        :: i_xyz(3)
 
@@ -180,7 +180,7 @@ contains
       k = 1
       do i=0,1
         do j=0,1
-          xyz_t = this % get_local_xyz(xyz, i_xyz + (/j, i, 0/))
+          xyz_t = get_local_rect(this, xyz, i_xyz + (/j, i, 0/))
           dists(k) = xyz_t(1)**2 + xyz_t(2)**2
           k = k + 1
         end do
@@ -202,7 +202,7 @@ contains
 !===============================================================================
 
   function get_local_rect(this, global_xyz, i_xyz) result(local_xyz)
-    class(Lattice), intent(in) :: this
+    type(Lattice), intent(in) :: this
     real(8),            intent(in) :: global_xyz(3)
     integer,            intent(in) :: i_xyz(3)
     real(8)                        :: local_xyz(3)

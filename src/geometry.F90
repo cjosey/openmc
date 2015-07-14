@@ -2,7 +2,8 @@ module geometry
 
   use constants
   use error,                  only: fatal_error, warning
-  use geometry_header,        only: Cell, Surface, Universe, Lattice
+  use geometry_header,        only: Cell, Surface, Universe, Lattice,&
+      get_local_rect, get_inds_rect, valid_inds_rect
   use global
   use output,                 only: write_message
   use particle_header,        only: LocalCoord, Particle
@@ -218,10 +219,10 @@ contains
         lat => lattices(c % fill) % obj
 
         ! Determine lattice indices
-        i_xyz = lat % get_indices(p % coord(j) % xyz + TINY_BIT * p % coord(j) % uvw)
+        i_xyz = get_inds_rect(lat,p % coord(j) % xyz + TINY_BIT * p % coord(j) % uvw)
 
         ! Store lower level coordinates
-        p % coord(j + 1) % xyz = lat % get_local_xyz(p % coord(j) % xyz, i_xyz)
+        p % coord(j + 1) % xyz = get_local_rect(lat,p % coord(j) % xyz, i_xyz)
         p % coord(j + 1) % uvw = p % coord(j) % uvw
 
         ! set particle lattice indices
@@ -231,7 +232,7 @@ contains
         p % coord(j + 1) % lattice_z = i_xyz(3)
 
         ! Set the next lowest coordinate level.
-        if (lat % are_valid_indices(i_xyz)) then
+        if (valid_inds_rect(lat, i_xyz)) then
           ! Particle is inside the lattice.
           p % coord(j + 1) % universe = &
                lat % universes(i_xyz(1), i_xyz(2), i_xyz(3))
@@ -585,9 +586,9 @@ contains
     i_xyz(3) = p % coord(j) % lattice_z
 
     ! Set the new coordinate position.
-    p % coord(j) % xyz = lat % get_local_xyz(p % coord(j - 1) % xyz, i_xyz)
+    p % coord(j) % xyz = get_local_rect(lat,p % coord(j - 1) % xyz, i_xyz)
 
-    OUTSIDE_LAT: if (.not. lat % are_valid_indices(i_xyz)) then
+    OUTSIDE_LAT: if (.not. valid_inds_rect(lat,i_xyz)) then
       ! The particle is outside the lattice.  Search for it from base coord
       p % n_coord = 1
       call find_cell(p, found)
@@ -1205,9 +1206,9 @@ contains
           ! Upper right and lower left sides.
           edge = -sign(lat % pitch(1)/TWO, beta_dir)  ! Oncoming edge
           if (beta_dir > ZERO) then
-            xyz_t = lat % get_local_xyz(p % coord(j - 1) % xyz, i_xyz+[1, 0, 0])
+            xyz_t = get_local_rect(lat,p % coord(j - 1) % xyz, i_xyz+[1, 0, 0])
           else
-            xyz_t = lat % get_local_xyz(p % coord(j - 1) % xyz, i_xyz+[-1, 0, 0])
+            xyz_t = get_local_rect(lat,p % coord(j - 1) % xyz, i_xyz+[-1, 0, 0])
           end if
           beta = xyz_t(1)*sqrt(THREE)/TWO + xyz_t(2)/TWO
           if (abs(beta - edge) < FP_PRECISION) then
@@ -1228,9 +1229,9 @@ contains
           ! Lower right and upper left sides.
           edge = -sign(lat % pitch(1)/TWO, gama_dir)  ! Oncoming edge
           if (gama_dir > ZERO) then
-            xyz_t = lat % get_local_xyz(p % coord(j - 1) % xyz, i_xyz+[1, -1, 0])
+            xyz_t = get_local_rect(lat,p % coord(j - 1) % xyz, i_xyz+[1, -1, 0])
           else
-            xyz_t = lat % get_local_xyz(p % coord(j - 1) % xyz, i_xyz+[-1, 1, 0])
+            xyz_t = get_local_rect(lat,p % coord(j - 1) % xyz, i_xyz+[-1, 1, 0])
           end if
           gama = xyz_t(1)*sqrt(THREE)/TWO - xyz_t(2)/TWO
           if (abs(gama - edge) < FP_PRECISION) then
@@ -1253,9 +1254,9 @@ contains
           ! Upper and lower sides.
           edge = -sign(lat % pitch(1)/TWO, v)  ! Oncoming edge
           if (v > ZERO) then
-            xyz_t = lat % get_local_xyz(p % coord(j - 1) % xyz, i_xyz+[0, 1, 0])
+            xyz_t = get_local_rect(lat,p % coord(j - 1) % xyz, i_xyz+[0, 1, 0])
           else
-            xyz_t = lat % get_local_xyz(p % coord(j - 1) % xyz, i_xyz+[0, -1, 0])
+            xyz_t = get_local_rect(lat,p % coord(j - 1) % xyz, i_xyz+[0, -1, 0])
           end if
           if (abs(xyz_t(2) - edge) < FP_PRECISION) then
             d = INFINITY
