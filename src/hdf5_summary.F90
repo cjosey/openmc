@@ -5,8 +5,7 @@ module hdf5_summary
   use ace_header,      only: Reaction, UrrData, Nuclide
   use constants
   use endf,            only: reaction_name
-  use geometry_header, only: Cell, Surface, Universe, Lattice, RectLattice, &
-                             &HexLattice
+  use geometry_header, only: Cell, Surface, Universe, Lattice
   use global
   use material_header, only: Material
   use mesh_header,     only: StructuredMesh
@@ -332,8 +331,8 @@ contains
            group="geometry/lattices/lattice " // trim(to_str(lat % id)))
 
       ! Write lattice type
-      select type (lat)
-      type is (RectLattice)
+      select case (lat % type)
+      case (LATTICE_RECT)
         ! Write lattice type.
         call su % write_data("rectangular", "type", &
              group="geometry/lattices/lattice " // trim(to_str(lat % id)))
@@ -386,7 +385,7 @@ contains
              group="geometry/lattices/lattice " // trim(to_str(lat % id)))
         deallocate(lattice_universes)
 
-      type is (HexLattice)
+      case (LATTICE_HEX)
         ! Write lattice type.
         call su % write_data("hexagonal", "type", &
              group="geometry/lattices/lattice " // trim(to_str(lat % id)))
