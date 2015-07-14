@@ -6,8 +6,9 @@ module output
   use constants
   use endf,            only: reaction_name
   use error,           only: fatal_error, warning
-  use geometry_header, only: Cell, Universe, Surface, Lattice, RectLattice, &
-                             &HexLattice, BASE_UNIVERSE
+  use geometry_header, only: Cell, Universe, Surface, Lattice, BASE_UNIVERSE, &
+                             LATTICE_RECT, LATTICE_HEX
+                             
   use global
   use math,            only: t_percentile
   use mesh_header,     only: StructuredMesh
@@ -469,7 +470,7 @@ contains
 
   subroutine print_lattice(lat, unit)
 
-    class(Lattice), pointer :: lat
+    type(Lattice), pointer :: lat
     integer,       optional :: unit
 
     integer :: unit_ ! unit to write to
@@ -487,62 +488,62 @@ contains
     ! Write user-specified name for lattice
     write(unit_,*) '    Name = ' // lat % name
 
-    select type(lat)
-    type is (RectLattice)
-      ! Write dimension of lattice.
-      if (lat % is_3d) then
-        write(unit_, *) '    Dimension = ' // to_str(lat % n_cells(1)) &
-             &// ' ' // to_str(lat % n_cells(2)) // ' ' &
-             &// to_str(lat % n_cells(3))
-      else
-        write(unit_, *) '    Dimension = ' // to_str(lat % n_cells(1)) &
-             &// ' ' // to_str(lat % n_cells(2))
-      end if
+    select case(lat % type)
+      case(LATTICE_RECT)
+        ! Write dimension of lattice.
+        if (lat % is_3d) then
+          write(unit_, *) '    Dimension = ' // to_str(lat % n_cells(1)) &
+               &// ' ' // to_str(lat % n_cells(2)) // ' ' &
+               &// to_str(lat % n_cells(3))
+        else
+          write(unit_, *) '    Dimension = ' // to_str(lat % n_cells(1)) &
+               &// ' ' // to_str(lat % n_cells(2))
+        end if
 
-      ! Write lower-left coordinates of lattice.
-      if (lat % is_3d) then
-        write(unit_, *) '    Lower-left = ' // to_str(lat % lower_left(1)) &
-             &// ' ' // to_str(lat % lower_left(2)) // ' ' &
-             &// to_str(lat % lower_left(3))
-      else
-        write(unit_, *) '    Lower-left = ' // to_str(lat % lower_left(1)) &
-             &// ' ' // to_str(lat % lower_left(2))
-      end if
+        ! Write lower-left coordinates of lattice.
+        if (lat % is_3d) then
+          write(unit_, *) '    Lower-left = ' // to_str(lat % lower_left(1)) &
+               &// ' ' // to_str(lat % lower_left(2)) // ' ' &
+               &// to_str(lat % lower_left(3))
+        else
+          write(unit_, *) '    Lower-left = ' // to_str(lat % lower_left(1)) &
+               &// ' ' // to_str(lat % lower_left(2))
+        end if
 
-      ! Write lattice pitch along each axis.
-      if (lat % is_3d) then
-        write(unit_, *) '    Pitch = ' // to_str(lat % pitch(1)) &
-             &// ' ' // to_str(lat % pitch(2)) // ' ' &
-             &// to_str(lat % pitch(3))
-      else
-        write(unit_, *) '    Pitch = ' // to_str(lat % pitch(1)) &
-             &// ' ' // to_str(lat % pitch(2))
-      end if
-      write(unit_,*)
+        ! Write lattice pitch along each axis.
+        if (lat % is_3d) then
+          write(unit_, *) '    Pitch = ' // to_str(lat % pitch(1)) &
+               &// ' ' // to_str(lat % pitch(2)) // ' ' &
+               &// to_str(lat % pitch(3))
+        else
+          write(unit_, *) '    Pitch = ' // to_str(lat % pitch(1)) &
+               &// ' ' // to_str(lat % pitch(2))
+        end if
+        write(unit_,*)
 
-    type is (HexLattice)
-      ! Write dimension of lattice.
-      write(unit_,*) '    N-rings = ' // to_str(lat % n_rings)
-      if (lat % is_3d) write(unit_,*) '    N-axial = ' // to_str(lat % n_axial)
+      case(LATTICE_HEX)
+        ! Write dimension of lattice.
+        write(unit_,*) '    N-rings = ' // to_str(lat % n_rings)
+        if (lat % is_3d) write(unit_,*) '    N-axial = ' // to_str(lat % n_axial)
 
-      ! Write center coordinates of lattice.
-      if (lat % is_3d) then
-        write(unit_, *) '    Center = ' // to_str(lat % center(1)) &
-             &// ' ' // to_str(lat % center(2)) // ' ' &
-             &// to_str(lat % center(3))
-      else
-        write(unit_, *) '    Center = ' // to_str(lat % center(1)) &
-             &// ' ' // to_str(lat % center(2))
-      end if
+        ! Write center coordinates of lattice.
+        if (lat % is_3d) then
+          write(unit_, *) '    Center = ' // to_str(lat % center(1)) &
+               &// ' ' // to_str(lat % center(2)) // ' ' &
+               &// to_str(lat % center(3))
+        else
+          write(unit_, *) '    Center = ' // to_str(lat % center(1)) &
+               &// ' ' // to_str(lat % center(2))
+        end if
 
-      ! Write lattice pitch along each axis.
-      if (lat % is_3d) then
-        write(unit_, *) '    Pitch = ' // to_str(lat % pitch(1)) &
-             &// ' ' // to_str(lat % pitch(2))
-      else
-        write(unit_, *) '    Pitch = ' // to_str(lat % pitch(1))
-      end if
-      write(unit_,*)
+        ! Write lattice pitch along each axis.
+        if (lat % is_3d) then
+          write(unit_, *) '    Pitch = ' // to_str(lat % pitch(1)) &
+               &// ' ' // to_str(lat % pitch(2))
+        else
+          write(unit_, *) '    Pitch = ' // to_str(lat % pitch(1))
+        end if
+        write(unit_,*)
     end select
 
 
@@ -2203,7 +2204,7 @@ contains
     logical :: later_cell = .false. ! Fill cells after this one?
     type(Cell),     pointer:: c           ! Pointer to current cell
     type(Universe), pointer :: next_univ  ! Next universe to loop through
-    class(Lattice), pointer :: lat        ! Pointer to current lattice
+    type(Lattice), pointer  :: lat        ! Pointer to current lattice
 
     n = univ % n_cells
 
@@ -2316,11 +2317,11 @@ contains
           ! Set current lattice
           lat => lattices(c % fill) % obj
 
-          select type (lat)
+          select case(lat % type)
 
           ! ==================================================================
           ! RECTANGULAR LATTICES
-          type is (RectLattice)
+          case(LATTICE_RECT)
 
             ! Write to the geometry stack
             path = trim(path) // "->" // to_str(lat%id)
@@ -2372,7 +2373,7 @@ contains
 
           ! ==================================================================
           ! HEXAGONAL LATTICES
-          type is (HexLattice)
+          case(LATTICE_HEX)
 
             ! Write to the geometry stack
             path = trim(path) // "->" // to_str(lat%id)

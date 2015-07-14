@@ -5,7 +5,7 @@ module input_xml
   use dict_header,      only: DictIntInt, ElemKeyValueCI
   use energy_grid,      only: grid_method, n_log_bins
   use error,            only: fatal_error, warning
-  use geometry_header,  only: Cell, Surface, Lattice, RectLattice, HexLattice
+  use geometry_header,  only: Cell, Surface, Lattice
   use global
   use list_header,      only: ListChar, ListReal
   use mesh_header,      only: StructuredMesh
@@ -993,7 +993,7 @@ contains
     character(MAX_WORD_LEN) :: word
     type(Cell),     pointer :: c => null()
     type(Surface),  pointer :: s => null()
-    class(Lattice), pointer :: lat => null()
+    type(Lattice),  pointer :: lat => null()
     type(Node), pointer :: doc => null()
     type(Node), pointer :: node_cell => null()
     type(Node), pointer :: node_surf => null()
@@ -1346,10 +1346,10 @@ contains
     allocate(lattices(n_lattices))
 
     RECT_LATTICES: do i = 1, n_rlats
-      allocate(RectLattice::lattices(i) % obj)
+      allocate(lattices(i) % obj)
       lat => lattices(i) % obj
-      select type(lat)
-      type is (RectLattice)
+      
+      lat % type = LATTICE_RECT
 
       ! Get pointer to i-th lattice
       call get_list_item(node_rlat_list, i, node_lat)
@@ -1469,15 +1469,13 @@ contains
 
       ! Add lattice to dictionary
       call lattice_dict % add_key(lat % id, i)
-
-      end select
     end do RECT_LATTICES
 
     HEX_LATTICES: do i = 1, n_hlats
-      allocate(HexLattice::lattices(n_rlats + i) % obj)
+      allocate(lattices(n_rlats + i) % obj)
       lat => lattices(n_rlats + i) % obj
-      select type (lat)
-      type is (HexLattice)
+      
+      lat % type = LATTICE_HEX
 
       ! Get pointer to i-th lattice
       call get_list_item(node_hlat_list, i, node_lat)
@@ -1648,8 +1646,6 @@ contains
 
       ! Add lattice to dictionary
       call lattice_dict % add_key(lat % id, n_rlats + i)
-
-      end select
     end do HEX_LATTICES
 
     ! Close geometry XML file

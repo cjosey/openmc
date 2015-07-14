@@ -2,8 +2,7 @@ module geometry
 
   use constants
   use error,                  only: fatal_error, warning
-  use geometry_header,        only: Cell, Surface, Universe, Lattice, &
-                                    &RectLattice, HexLattice
+  use geometry_header,        only: Cell, Surface, Universe, Lattice
   use global
   use output,                 only: write_message
   use particle_header,        only: LocalCoord, Particle
@@ -131,7 +130,7 @@ contains
     integer :: index_cell           ! index in cells array
     logical :: use_search_cells     ! use cells provided as argument
     type(Cell),     pointer :: c    ! pointer to cell
-    class(Lattice), pointer :: lat  ! pointer to lattice
+    type(Lattice),  pointer :: lat  ! pointer to lattice
     type(Universe), pointer :: univ ! universe to search in
 
     do j = p % n_coord + 1, MAX_COORD
@@ -565,7 +564,7 @@ contains
     integer :: j
     integer :: i_xyz(3)       ! indices in lattice
     logical :: found          ! particle found in cell?
-    class(Lattice),   pointer :: lat
+    type(Lattice),   pointer :: lat
 
     j = p % n_coord
     lat => lattices(p % coord(j) % lattice) % obj
@@ -664,7 +663,7 @@ contains
     logical :: on_surface         ! is particle on surface?
     type(Cell),       pointer :: cl
     type(Surface),    pointer :: surf
-    class(Lattice),   pointer :: lat
+    type(Lattice),    pointer :: lat
 
     ! inialize distance to infinity (huge)
     dist = INFINITY
@@ -1117,9 +1116,9 @@ contains
       LAT_COORD: if (p % coord(j) % lattice /= NONE) then
         lat => lattices(p % coord(j) % lattice) % obj
 
-        LAT_TYPE: select type(lat)
+        LAT_TYPE: select case(lat % type)
 
-        type is (RectLattice)
+        case (LATTICE_RECT)
           ! copy local coordinates
           x = p % coord(j) % xyz(1)
           y = p % coord(j) % xyz(2)
@@ -1185,7 +1184,7 @@ contains
             end if
           end if
 
-        type is (HexLattice) LAT_TYPE
+        case(LATTICE_HEX) LAT_TYPE
           ! Copy local coordinates.
           z = p % coord(j) % xyz(3)
           i_xyz(1) = p % coord(j) % lattice_x
@@ -1582,7 +1581,7 @@ contains
     integer :: cell_index                 ! index in cells array
     type(Cell),     pointer :: c          ! pointer to current cell
     type(Universe), pointer :: next_univ  ! next universe to cycle through
-    class(Lattice), pointer :: lat        ! pointer to current lattice
+    type(Lattice),  pointer :: lat        ! pointer to current lattice
 
     n = univ % n_cells
     offset = 0
@@ -1619,9 +1618,9 @@ contains
         ! Set current lattice
         lat => lattices(c % fill) % obj
 
-        select type (lat)
+        select case (lat%type)
 
-        type is (RectLattice)
+        case (LATTICE_RECT)
 
           ! Loop over lattice coordinates
           do j = 1, lat % n_cells(1)
@@ -1635,7 +1634,7 @@ contains
             end do
           end do
 
-        type is (HexLattice)
+        case (LATTICE_HEX)
 
           ! Loop over lattice coordinates
           do m = 1, lat % n_axial
@@ -1683,8 +1682,8 @@ contains
     integer :: count                       ! number of times target located
     type(Cell),     pointer :: c           ! pointer to current cell
     type(Universe), pointer :: next_univ   ! next univ to loop through
-    class(Lattice), pointer :: lat         ! pointer to current lattice
-
+    type(Lattice),  pointer :: lat         ! pointer to current lattice
+ 
     ! Don't research places already checked
     if (found(universe_dict % get_key(univ % id), map)) then
       count = counts(universe_dict % get_key(univ % id), map)
@@ -1736,9 +1735,9 @@ contains
         ! Set current lattice
         lat => lattices(c % fill) % obj
 
-        select type (lat)
+        select case (lat % type)
 
-        type is (RectLattice)
+        case (LATTICE_RECT)
 
           ! Loop over lattice coordinates
           do j = 1, lat % n_cells(1)
@@ -1759,7 +1758,7 @@ contains
             end do
           end do
 
-          type is (HexLattice)
+          case (LATTICE_HEX)
 
             ! Loop over lattice coordinates
             do m = 1, lat % n_axial
@@ -1812,7 +1811,7 @@ contains
     integer :: cell_index                 ! index in cells array
     type(Cell),     pointer :: c          ! pointer to current cell
     type(Universe), pointer :: next_univ  ! next universe to loop through
-    class(Lattice), pointer :: lat        ! pointer to current lattice
+    type(Lattice),  pointer :: lat        ! pointer to current lattice
 
     n = univ % n_cells
 
@@ -1844,9 +1843,9 @@ contains
         ! Set current lattice
         lat => lattices(c % fill) % obj
 
-        select type (lat)
+        select case (lat % type)
 
-        type is (RectLattice)
+        case (LATTICE_RECT)
 
           ! Loop over lattice coordinates
           do j = 1, lat % n_cells(1)
@@ -1858,7 +1857,7 @@ contains
             end do
           end do
 
-        type is (HexLattice)
+        case (LATTICE_HEX)
 
           ! Loop over lattice coordinates
           do m = 1, lat % n_axial
@@ -1900,7 +1899,7 @@ contains
     integer :: levels_below               ! max levels below this universe
     type(Cell),     pointer :: c          ! pointer to current cell
     type(Universe), pointer :: next_univ  ! next universe to loop through
-    class(Lattice), pointer :: lat        ! pointer to current lattice
+    type(Lattice),  pointer :: lat        ! pointer to current lattice
 
     levels_below = 0
     do i = 1, univ % n_cells
@@ -1920,9 +1919,9 @@ contains
         ! Set current lattice
         lat => lattices(c % fill) % obj
 
-        select type (lat)
+        select case (lat % type)
 
-        type is (RectLattice)
+        case (LATTICE_RECT)
 
           ! Loop over lattice coordinates
           do j = 1, lat % n_cells(1)
@@ -1934,7 +1933,7 @@ contains
             end do
           end do
 
-        type is (HexLattice)
+        case (LATTICE_HEX)
 
           ! Loop over lattice coordinates
           do m = 1, lat % n_axial
