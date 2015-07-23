@@ -191,10 +191,7 @@ contains
     global_tally_absorption  = 0
 !$omp end parallel
 
-#ifdef _OPENMP
-    ! Join the fission bank from each thread into one global fission bank
-    call join_bank_from_threads()
-#endif
+    call scrunch_bank()
 
     ! Distribute fission bank across processors evenly
     call time_bank % start()
@@ -861,45 +858,23 @@ contains
 
   end subroutine replay_batch_history
 
-#ifdef _OPENMP
-!===============================================================================
-! JOIN_BANK_FROM_THREADS
-!===============================================================================
 
-  subroutine join_bank_from_threads()
-
-    integer(8) :: total ! total number of fission bank sites
-    integer    :: i     ! loop index for threads
-
-    ! Initialize the total number of fission bank sites
+  subroutine scrunch_bank()
+    integer :: i ! particle index in bank
+    integer :: total ! total number of fission bank sites
+    
     total = 0
-
-!$omp parallel
-
-    ! Copy thread fission bank sites to one shared copy
-!$omp do ordered schedule(static)
-    do i = 1, n_threads
-!$omp ordered
-       master_fission_bank(total+1:total+n_bank) = fission_bank(1:n_bank)
-       total = total + n_bank
-!$omp end ordered
+    
+    do i = 1, work
+      if (master_fission_bank(i) % count > 0) then
+        fission_bank(total + 1 : total + master_fission_bank(i) % count)&
+             = master_fission_bank(i) % neutron(1 : master_fission_bank(i) % count)
+        total = total + master_fission_bank(i) % count
+      end if
+      master_fission_bank(i) % count = 0
     end do
-!$omp end do
-
-    ! Make sure all threads have made it to this point
-!$omp barrier
-
-    ! Now copy the shared fission bank sites back to the master thread's copy.
-    if (thread_id == 0) then
-       n_bank = total
-       fission_bank(1:n_bank) = master_fission_bank(1:n_bank)
-    else
-       n_bank = 0
-    end if
-
-!$omp end parallel
-
-  end subroutine join_bank_from_threads
-#endif
+    
+    n_bank = total
+  end subroutine scrunch_bank
 
 end module eigenvalue

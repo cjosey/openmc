@@ -2,7 +2,7 @@ module global
 
   use ace_header,       only: Nuclide, SAlphaBeta, xsListing, NuclideMicroXS, &
                               MaterialMacroXS, Nuclide0K
-  use bank_header,      only: Bank
+  use bank_header,      only: Bank, BankArray
   use cmfd_header
   use constants
   use dict_header,      only: DictCharInt, DictIntInt
@@ -183,9 +183,8 @@ module global
   ! Source and fission bank
   type(Bank), allocatable, target :: source_bank(:)
   type(Bank), allocatable, target :: fission_bank(:)
-#ifdef _OPENMP
-  type(Bank), allocatable, target :: master_fission_bank(:)
-#endif
+  type(BankArray), allocatable, target :: master_fission_bank(:)
+  
   integer(8) :: n_bank       ! # of sites in fission bank
   integer(8) :: work         ! number of particles per processor
   integer(8), allocatable :: work_index(:) ! starting index in source bank for each process
@@ -415,7 +414,7 @@ module global
   integer :: n_res_scatterers_total = 0 ! total number of resonant scatterers
   type(Nuclide0K), allocatable, target :: nuclides_0K(:) ! 0K nuclides info
 
-!$omp threadprivate(micro_xs, material_xs, fission_bank, n_bank, &
+!$omp threadprivate(micro_xs, material_xs, n_bank, &
 !$omp&              trace, thread_id, current_work, matching_bins)
 
 contains
@@ -485,12 +484,16 @@ contains
     if (allocated(tally_maps)) deallocate(tally_maps)
 
     ! Deallocate fission and source bank and entropy
-!$omp parallel
     if (allocated(fission_bank)) deallocate(fission_bank)
-!$omp end parallel
-#ifdef _OPENMP
-    if (allocated(master_fission_bank)) deallocate(master_fission_bank)
-#endif
+    
+    if (allocated(master_fission_bank)) then
+      do i = 1, size(master_fission_bank)
+        if (master_fission_bank(i) % size /= 0) then
+          deallocate(master_fission_bank(i) % neutron)
+        end if
+      end do
+      deallocate(master_fission_bank)
+    end if
     if (allocated(source_bank)) deallocate(source_bank)
     if (allocated(entropy_p)) deallocate(entropy_p)
 

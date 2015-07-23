@@ -904,27 +904,9 @@ contains
       call fatal_error("Failed to allocate source bank.")
     end if
 
-#ifdef _OPENMP
-    ! If OpenMP is being used, each thread needs its own private fission
-    ! bank. Since the private fission banks need to be combined at the end of a
-    ! generation, there is also a 'master_fission_bank' that is used to collect
-    ! the sites from each thread.
-
-    n_threads = omp_get_max_threads()
-
-!$omp parallel
-    thread_id = omp_get_thread_num()
-
-    if (thread_id == 0) then
-       allocate(fission_bank(3*work))
-    else
-       allocate(fission_bank(3*work/n_threads))
-    end if
-!$omp end parallel
-    allocate(master_fission_bank(3*work), STAT=alloc_err)
-#else
     allocate(fission_bank(3*work), STAT=alloc_err)
-#endif
+    
+    allocate(master_fission_bank(work), STAT=alloc_err)
 
     ! Check for allocation errors
     if (alloc_err /= 0) then
