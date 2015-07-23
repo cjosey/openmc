@@ -75,7 +75,7 @@ contains
 
         ! ====================================================================
         ! LOOP OVER PARTICLES
-!$omp parallel do schedule(static) firstprivate(p)
+!$omp parallel do schedule(auto) firstprivate(p)
         PARTICLE_LOOP: do i_work = 1, work
           current_work = i_work
 
@@ -867,8 +867,8 @@ contains
     
     do i = 1, work
       if (master_fission_bank(i) % count > 0) then
-        fission_bank(total + 1 : total + master_fission_bank(i) % count)&
-             = master_fission_bank(i) % neutron(1 : master_fission_bank(i) % count)
+        fission_bank(total + 1 : total + master_fission_bank(i) % count) = &
+             master_fission_bank(i) % neutron(1 : master_fission_bank(i) % count)
         total = total + master_fission_bank(i) % count
       end if
       master_fission_bank(i) % count = 0
