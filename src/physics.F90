@@ -1124,7 +1124,7 @@ contains
       E = sample_fission_energy(nuc, rxn, p % E)
       
       ! Set the value in the bank for this particle
-      call bank_neutron(master_fission_bank(p % id), ONE/weight, &
+      call bank_neutron(master_fission_bank(p % local_id), ONE/weight, &
                         p % coord(1) % xyz, uvw, E)
     end do
 

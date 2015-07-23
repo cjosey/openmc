@@ -267,6 +267,7 @@ contains
 
     ! set identifier for particle
     p % id = work_index(rank) + index_source
+    p % local_id = index_source
 
     ! set random number seed
     particle_seed = (overall_gen - 1)*n_particles + p % id

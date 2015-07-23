@@ -2,7 +2,7 @@ module bank_header
 
   implicit none
   
-  integer, parameter :: bank_realloc_size = 3
+  integer, parameter :: BANK_REALLOC_SIZE = 3
 
 !===============================================================================
 ! BANK is used for storing fission sites in eigenvalue calculations. Since all
@@ -42,15 +42,15 @@ contains
     if (this % count == this % size) then
       if (this % size == 0) then
         ! We need to create the bank array
-        allocate(this % neutron(bank_realloc_size))
+        allocate(this % neutron(BANK_REALLOC_SIZE))
       else
         ! We need to expand the bank array
         call move_alloc(this % neutron, temporary)
-        allocate(this % neutron(this % size + bank_realloc_size))
+        allocate(this % neutron(this % size + BANK_REALLOC_SIZE))
         this % neutron(1:this % size) = temporary
         deallocate(temporary)
       end if
-      this % size = this % size + 3
+      this % size = this % size + BANK_REALLOC_SIZE
     end if
     
     ! Copy data into bank

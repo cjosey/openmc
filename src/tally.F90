@@ -679,12 +679,12 @@ contains
     ! loop over number of particles banked
     do k = 1, p % n_bank
       ! determine score based on bank site weight and keff
-      score = keff * master_fission_bank(p % id) % neutron(&
-           master_fission_bank(p % id) % count - k) % wgt
+      score = keff * master_fission_bank(p % local_id) % neutron(&
+           master_fission_bank(p % local_id) % count - k) % wgt
 
       ! determine outgoing energy from fission bank
-      E_out = master_fission_bank(p % id) % neutron(&
-           master_fission_bank(p % id) % count - k) % E
+      E_out = master_fission_bank(p % local_id) % neutron(&
+           master_fission_bank(p % local_id) % count - k) % E
 
       ! check if outgoing energy is within specified range on filter
       if (E_out < t % filters(i) % real_bins(1) .or. &
