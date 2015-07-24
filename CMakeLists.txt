@@ -35,6 +35,11 @@ endif()
 set(maxcoord 10 CACHE STRING "Maximum number of nested coordinate levels")
 add_definitions(-DMAX_COORD=${maxcoord})
 
+# Enable error checking in performance critical regions
+if(debug)
+  add_definitions(-DDEBUG)
+endif()
+
 #===============================================================================
 # MPI for distributed-memory parallelism / HDF5 for binary output
 #===============================================================================
