@@ -1184,8 +1184,8 @@ contains
             offset = offset + cells(p % coord(j) % cell) % &
                  offset(t % filters(i) % offset)
           elseif(cells(p % coord(j) % cell) % type == CELL_LATTICE) then
-            if (lattices(p % coord(j + 1) % lattice) % obj &
-                 % are_valid_indices([&
+            if (valid_inds_rect(lattices(p % coord(j + 1) % lattice) % obj, &
+                 [&
                  p % coord(j + 1) % lattice_x, &
                  p % coord(j + 1) % lattice_y, &
                  p % coord(j + 1) % lattice_z])) then
