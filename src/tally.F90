@@ -17,7 +17,7 @@ module tally
   use tally_header,     only: TallyResult, TallyMapItem, TallyMapElement
 
 #ifdef MPI
-  use mpi
+  use message_passing
 #endif
 
   implicit none
@@ -679,10 +679,12 @@ contains
     ! loop over number of particles banked
     do k = 1, p % n_bank
       ! determine score based on bank site weight and keff
-      score = keff * fission_bank(n_bank - p % n_bank + k) % wgt
+      score = keff * master_fission_bank(p % local_id) % neutron(&
+           master_fission_bank(p % local_id) % count - k) % wgt
 
       ! determine outgoing energy from fission bank
-      E_out = fission_bank(n_bank - p % n_bank + k) % E
+      E_out = master_fission_bank(p % local_id) % neutron(&
+           master_fission_bank(p % local_id) % count - k) % E
 
       ! check if outgoing energy is within specified range on filter
       if (E_out < t % filters(i) % real_bins(1) .or. &
@@ -1182,9 +1184,17 @@ contains
             offset = offset + cells(p % coord(j) % cell) % &
                  offset(t % filters(i) % offset)
           elseif(cells(p % coord(j) % cell) % type == CELL_LATTICE) then
-            offset = offset + lattices(p % coord(j + 1) % lattice) % obj % &
-                 offset(t % filters(i) % offset, p % coord(j + 1) % lattice_x, &
-                 p % coord(j + 1) % lattice_y, p % coord(j + 1) % lattice_z)
+            if (lattices(p % coord(j + 1) % lattice) % obj &
+                 % are_valid_indices([&
+                 p % coord(j + 1) % lattice_x, &
+                 p % coord(j + 1) % lattice_y, &
+                 p % coord(j + 1) % lattice_z])) then
+              offset = offset + lattices(p % coord(j + 1) % lattice) % obj % &
+                   offset(t % filters(i) % offset, &
+                   p % coord(j + 1) % lattice_x, &
+                   p % coord(j + 1) % lattice_y, &
+                   p % coord(j + 1) % lattice_z)
+            end if
           end if
           if (t % filters(i) % int_bins(1) == p % coord(j) % cell) then
             matching_bins(i) = offset + 1

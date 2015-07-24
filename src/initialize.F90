@@ -27,7 +27,7 @@ module initialize
   use tally_initialize, only: configure_tallies
 
 #ifdef MPI
-  use mpi
+  use message_passing
 #endif
 
 #ifdef _OPENMP
@@ -195,11 +195,17 @@ contains
   subroutine initialize_mpi()
 
     integer                   :: bank_blocks(4)  ! Count for each datatype
+#ifdef MPIF08
+    type(MPI_Datatype)        :: bank_types(4)
+    type(MPI_Datatype)        :: result_types(1)
+    type(MPI_Datatype)        :: temp_type
+#else
     integer                   :: bank_types(4)   ! Datatypes
-    integer(MPI_ADDRESS_KIND) :: bank_disp(4)    ! Displacements
-    integer                   :: temp_type       ! temporary derived type
-    integer                   :: result_blocks(1) ! Count for each datatype
     integer                   :: result_types(1)  ! Datatypes
+    integer                   :: temp_type       ! temporary derived type
+#endif
+    integer(MPI_ADDRESS_KIND) :: bank_disp(4)    ! Displacements
+    integer                   :: result_blocks(1) ! Count for each datatype
     integer(MPI_ADDRESS_KIND) :: result_disp(1)   ! Displacements
     integer(MPI_ADDRESS_KIND) :: result_base_disp ! Base displacement
     integer(MPI_ADDRESS_KIND) :: lower_bound     ! Lower bound for TallyResult
@@ -898,27 +904,9 @@ contains
       call fatal_error("Failed to allocate source bank.")
     end if
 
-#ifdef _OPENMP
-    ! If OpenMP is being used, each thread needs its own private fission
-    ! bank. Since the private fission banks need to be combined at the end of a
-    ! generation, there is also a 'master_fission_bank' that is used to collect
-    ! the sites from each thread.
-
-    n_threads = omp_get_max_threads()
-
-!$omp parallel
-    thread_id = omp_get_thread_num()
-
-    if (thread_id == 0) then
-       allocate(fission_bank(3*work))
-    else
-       allocate(fission_bank(3*work/n_threads))
-    end if
-!$omp end parallel
-    allocate(master_fission_bank(3*work), STAT=alloc_err)
-#else
     allocate(fission_bank(3*work), STAT=alloc_err)
-#endif
+    
+    allocate(master_fission_bank(work), STAT=alloc_err)
 
     ! Check for allocation errors
     if (alloc_err /= 0) then

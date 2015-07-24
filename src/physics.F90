@@ -18,6 +18,7 @@ module physics
   use random_lcg,             only: prn
   use search,                 only: binary_search
   use string,                 only: to_str
+  use bank_header,            only: bank_neutron
 
   implicit none
 
@@ -1060,6 +1061,8 @@ contains
     real(8) :: mu           ! fission neutron angular cosine
     real(8) :: phi          ! fission neutron azimuthal angle
     real(8) :: weight       ! weight adjustment for ufs method
+    real(8) :: E            ! sampled energy
+    real(8) :: uvw(3)       ! sampled direction
     logical :: in_mesh      ! source site in ufs mesh?
     type(Nuclide),  pointer :: nuc
     type(Reaction), pointer :: rxn
@@ -1101,23 +1104,10 @@ contains
       nu = int(nu_t) + 1
     end if
 
-    ! Check for fission bank size getting hit
-    if (n_bank + nu > size(fission_bank)) then
-      if (master) call warning("Maximum number of sites in fission bank &
-           &reached. This can result in irreproducible results using different &
-           &numbers of processes/threads.")
-    end if
-
     ! Bank source neutrons
-    if (nu == 0 .or. n_bank == size(fission_bank)) return
+    if (nu == 0) return
     p % fission = .true. ! Fission neutrons will be banked
-    do i = int(n_bank,4) + 1, int(min(n_bank + nu, int(size(fission_bank),8)),4)
-      ! Bank source neutrons by copying particle data
-      fission_bank(i) % xyz = p % coord(1) % xyz
-
-      ! Set weight of fission bank site
-      fission_bank(i) % wgt = ONE/weight
-
+    do i = 1, nu
       ! Sample cosine of angle -- fission neutrons are always emitted
       ! isotropically. Sometimes in ACE data, fission reactions actually have
       ! an angular distribution listed, but for those that do, it's simply just
@@ -1126,19 +1116,21 @@ contains
 
       ! Sample azimuthal angle uniformly in [0,2*pi)
       phi = TWO*PI*prn()
-      fission_bank(i) % uvw(1) = mu
-      fission_bank(i) % uvw(2) = sqrt(ONE - mu*mu) * cos(phi)
-      fission_bank(i) % uvw(3) = sqrt(ONE - mu*mu) * sin(phi)
+      uvw(1) = mu
+      uvw(2) = sqrt(ONE - mu*mu) * cos(phi)
+      uvw(3) = sqrt(ONE - mu*mu) * sin(phi)
 
       ! Sample secondary energy distribution for fission reaction and set energy
       ! in fission bank
-      fission_bank(i) % E = sample_fission_energy(nuc, rxn, p % E)
+      E = sample_fission_energy(nuc, rxn, p % E)
+      
+      ! Set the value in the bank for this particle
+      call bank_neutron(master_fission_bank(p % local_id), ONE/weight, &
+                        p % coord(1) % xyz, uvw, E)
     end do
 
-    ! increment number of bank sites
-    n_bank = min(n_bank + nu, int(size(fission_bank),8))
-
     ! Store total weight banked for analog fission tallies
+    ! NOTE TO SELF: Investigate these.  I suspect they're wrong.
     p % n_bank   = nu
     p % wgt_bank = nu/weight
 

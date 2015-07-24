@@ -38,6 +38,7 @@ module particle_header
   type Particle
     ! Basic data
     integer(8) :: id            ! Unique ID
+    integer(8) :: local_id      ! ID on a given thread
     integer    :: type          ! Particle type (n, p, e, etc)
 
     ! Particle coordinates
