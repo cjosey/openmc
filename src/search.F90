@@ -33,37 +33,32 @@ contains
     L = 1
     R = n
 
+#ifdef DEBUG
     if (val < array(L) .or. val > array(R)) then
       call fatal_error("Value outside of array during binary search")
     end if
 
     n_iteration = 0
+#endif
     do while (R - L > 1)
-
-      ! Check boundaries
-      if (val > array(L) .and. val < array(L+1)) then
-        array_index = L
-        return
-      elseif (val > array(R-1) .and. val < array(R)) then
-        array_index = R - 1
-        return
-      end if
 
       ! Find values at midpoint
       array_index = L + (R - L)/2
       testval = array(array_index)
       if (val >= testval) then
         L = array_index
-      elseif (val < testval) then
+      else
         R = array_index
       end if
 
+#ifdef DEBUG
       ! check for large number of iterations
       n_iteration = n_iteration + 1
       if (n_iteration == MAX_ITERATION) then
         call fatal_error("Reached maximum number of iterations on binary &
             &search.")
       end if
+#endif
     end do
 
     array_index = L
