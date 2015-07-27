@@ -9,8 +9,7 @@ module initialize
   use error,            only: fatal_error, warning
   use geometry,         only: neighbor_lists, count_instance, calc_offsets,    &
                               maximum_levels
-  use geometry_header,  only: Cell, Universe, Lattice, RectLattice, HexLattice,&
-                              &BASE_UNIVERSE
+  use geometry_header,  only: Cell, Universe, Lattice, BASE_UNIVERSE
   use global
   use input_xml,        only: read_input_xml, read_cross_sections_xml,         &
                               cells_in_univ_dict, read_plots_xml
@@ -646,9 +645,9 @@ contains
 
     do i = 1, n_lattices
       lat => lattices(i) % obj
-      select type (lat)
+      select case (lat % type)
 
-      type is (RectLattice)
+      case (LATTICE_RECT)
         do m = 1, lat % n_cells(3)
           do k = 1, lat % n_cells(2)
             do j = 1, lat % n_cells(1)
@@ -664,7 +663,7 @@ contains
           end do
         end do
 
-      type is (HexLattice)
+      case (LATTICE_HEX)
         do m = 1, lat % n_axial
           do k = 1, 2*lat % n_rings - 1
             do j = 1, 2*lat % n_rings - 1
@@ -1118,12 +1117,12 @@ contains
     do i = 1, n_lattices
       lat => lattices(i) % obj
 
-      select type(lat)
+      select case(lat % type)
 
-      type is (RectLattice)
+      case (LATTICE_RECT)
         allocate(lat % offset(n_maps, lat % n_cells(1), lat % n_cells(2), &
                  lat % n_cells(3)))
-      type is (HexLattice)
+      case (LATTICE_HEX)
         allocate(lat % offset(n_maps, 2 * lat % n_rings - 1, &
              2 * lat % n_rings - 1, lat % n_axial))
       end select

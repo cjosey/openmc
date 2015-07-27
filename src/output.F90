@@ -6,8 +6,7 @@ module output
   use constants
   use endf,            only: reaction_name
   use error,           only: fatal_error, warning
-  use geometry_header, only: Cell, Universe, Surface, Lattice, RectLattice, &
-                             &HexLattice, BASE_UNIVERSE
+  use geometry_header, only: Cell, Universe, Surface, Lattice, BASE_UNIVERSE
   use global
   use math,            only: t_percentile
   use mesh_header,     only: StructuredMesh
@@ -487,8 +486,8 @@ contains
     ! Write user-specified name for lattice
     write(unit_,*) '    Name = ' // lat % name
 
-    select type(lat)
-    type is (RectLattice)
+    select case(lat % type)
+    case (LATTICE_RECT)
       ! Write dimension of lattice.
       if (lat % is_3d) then
         write(unit_, *) '    Dimension = ' // to_str(lat % n_cells(1)) &
@@ -520,7 +519,7 @@ contains
       end if
       write(unit_,*)
 
-    type is (HexLattice)
+    case (LATTICE_HEX)
       ! Write dimension of lattice.
       write(unit_,*) '    N-rings = ' // to_str(lat % n_rings)
       if (lat % is_3d) write(unit_,*) '    N-axial = ' // to_str(lat % n_axial)
@@ -2316,11 +2315,11 @@ contains
           ! Set current lattice
           lat => lattices(c % fill) % obj
 
-          select type (lat)
+          select case (lat % type)
 
           ! ==================================================================
           ! RECTANGULAR LATTICES
-          type is (RectLattice)
+          case (LATTICE_RECT)
 
             ! Write to the geometry stack
             path = trim(path) // "->" // to_str(lat%id)
@@ -2372,7 +2371,7 @@ contains
 
           ! ==================================================================
           ! HEXAGONAL LATTICES
-          type is (HexLattice)
+          case (LATTICE_HEX)
 
             ! Write to the geometry stack
             path = trim(path) // "->" // to_str(lat%id)

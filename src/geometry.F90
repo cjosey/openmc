@@ -2,8 +2,7 @@ module geometry
 
   use constants
   use error,                  only: fatal_error, warning
-  use geometry_header,        only: Cell, Surface, Universe, Lattice, &
-                                    &RectLattice, HexLattice
+  use geometry_header,        only: Cell, Surface, Universe, Lattice
   use global
   use output,                 only: write_message
   use particle_header,        only: LocalCoord, Particle
@@ -1117,9 +1116,9 @@ contains
       LAT_COORD: if (p % coord(j) % lattice /= NONE) then
         lat => lattices(p % coord(j) % lattice) % obj
 
-        LAT_TYPE: select type(lat)
+        LAT_TYPE: select case (lat % type)
 
-        type is (RectLattice)
+        case (LATTICE_RECT)
           ! copy local coordinates
           x = p % coord(j) % xyz(1)
           y = p % coord(j) % xyz(2)
@@ -1185,7 +1184,7 @@ contains
             end if
           end if
 
-        type is (HexLattice) LAT_TYPE
+        case (LATTICE_HEX) LAT_TYPE
           ! Copy local coordinates.
           z = p % coord(j) % xyz(3)
           i_xyz(1) = p % coord(j) % lattice_x
@@ -1619,9 +1618,9 @@ contains
         ! Set current lattice
         lat => lattices(c % fill) % obj
 
-        select type (lat)
+        select case (lat % type)
 
-        type is (RectLattice)
+        case (LATTICE_RECT)
 
           ! Loop over lattice coordinates
           do j = 1, lat % n_cells(1)
@@ -1635,7 +1634,7 @@ contains
             end do
           end do
 
-        type is (HexLattice)
+        case (LATTICE_HEX)
 
           ! Loop over lattice coordinates
           do m = 1, lat % n_axial
@@ -1736,30 +1735,30 @@ contains
         ! Set current lattice
         lat => lattices(c % fill) % obj
 
-        select type (lat)
+        select case (lat % type)
 
-        type is (RectLattice)
+          case (LATTICE_RECT)
 
-          ! Loop over lattice coordinates
-          do j = 1, lat % n_cells(1)
-            do k = 1, lat % n_cells(2)
-              do m = 1, lat % n_cells(3)
-                next_univ => universes(lat % universes(j, k, m))
+            ! Loop over lattice coordinates
+            do j = 1, lat % n_cells(1)
+              do k = 1, lat % n_cells(2)
+                do m = 1, lat % n_cells(3)
+                  next_univ => universes(lat % universes(j, k, m))
 
-                ! Found target - stop since target cannot contain itself
-                if (next_univ % id == goal) then
-                  count = count + 1
-                  cycle
-                end if
+                  ! Found target - stop since target cannot contain itself
+                  if (next_univ % id == goal) then
+                    count = count + 1
+                    cycle
+                  end if
 
-                count = count + &
-                     count_target(next_univ, counts, found, goal, map)
+                  count = count + &
+                       count_target(next_univ, counts, found, goal, map)
 
+                end do
               end do
             end do
-          end do
 
-          type is (HexLattice)
+          case (LATTICE_HEX)
 
             ! Loop over lattice coordinates
             do m = 1, lat % n_axial
@@ -1844,9 +1843,9 @@ contains
         ! Set current lattice
         lat => lattices(c % fill) % obj
 
-        select type (lat)
+        select case (lat % type)
 
-        type is (RectLattice)
+        case (LATTICE_RECT)
 
           ! Loop over lattice coordinates
           do j = 1, lat % n_cells(1)
@@ -1858,7 +1857,7 @@ contains
             end do
           end do
 
-        type is (HexLattice)
+        case (LATTICE_HEX)
 
           ! Loop over lattice coordinates
           do m = 1, lat % n_axial
@@ -1920,9 +1919,9 @@ contains
         ! Set current lattice
         lat => lattices(c % fill) % obj
 
-        select type (lat)
+        select case (lat % type)
 
-        type is (RectLattice)
+        case (LATTICE_RECT)
 
           ! Loop over lattice coordinates
           do j = 1, lat % n_cells(1)
@@ -1934,7 +1933,7 @@ contains
             end do
           end do
 
-        type is (HexLattice)
+        case (LATTICE_HEX)
 
           ! Loop over lattice coordinates
           do m = 1, lat % n_axial
